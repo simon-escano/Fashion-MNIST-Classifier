@@ -1,6 +1,24 @@
+// Add this at the top of your script
+function debounce(func, delay) {
+    let timeout;
+    return function(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), delay);
+    };
+}
+
+// ... your existing code ...
+
+const debouncedPredict = debounce(predict, 500); // Adjust the delay (in milliseconds) as needed
+
+// ... inside the fileInput 'change' listener, replace predict(img); with:
+
+
 const fileInput = document.getElementById('fileInput');
 const uploadPhoto = document.getElementById('uploadPhoto');
 const imageBox = document.getElementById('imageBox');
+const imageClass = document.getElementById('imageClass');
 let model;
 
 // Load the model when the script runs
@@ -49,31 +67,23 @@ async function predict(imageElement) {
     console.log('Predicted Class Index:', predictedClassIndex);
 
     // Map the predicted index to your actual class names
-    const classNames = ['ankle-boot', 't-shirt', 'bag', 'coat', 'dress', 'pullover', 'sandal', 'shirt', 'sneaker', 'trouser']; // Replace with your actual class names in the correct order
+    const classNames = ['t-shirt', 'trouser', 'pullover', 'dress', 'coat', 'sandal', 'shirt', 'sneaker', 'bag', 'ankle-boot'];
 
     if (predictedClassIndex >= 0 && predictedClassIndex < classNames.length) {
         const predictedClassName = classNames[predictedClassIndex];
         console.log('Predicted Class:', predictedClassName);
 
-        // Display the prediction image
-        displayPredictionImage(predictedClassName);
+        // Display the prediction image by changing the src of #imageClass
+        imageClass.src = `img/classes/${predictedClassName}.png`;
+        imageClass.alt = `Predicted: ${predictedClassName}`;
     } else {
         console.log('Error: Predicted class index out of bounds.');
+        imageClass.src = ''; // Clear the image if there's an error
+        imageClass.alt = '';
     }
 
     // Dispose of the tensor to free up memory
     tensor.dispose();
-}
-
-// Function to display the prediction image
-function displayPredictionImage(className) {
-    const predictionImage = document.createElement('img');
-    predictionImage.src = `img/classes/${className}.png`;
-    predictionImage.alt = `Predicted: ${className}`;
-    predictionImage.classList.add('w-20', 'h-20', 'mt-4'); // Add some styling
-
-    // Append the prediction image to the uploadPhoto div
-    uploadPhoto.appendChild(predictionImage);
 }
 
 // Event listener for clicking the upload photo area
@@ -87,17 +97,15 @@ fileInput.addEventListener('change', (event) => {
     if (file) {
         // Clear any previous uploaded image and prediction
         imageBox.innerHTML = '';
-        const existingPredictionImage = uploadPhoto.querySelector('img.w-20.h-20.mt-4');
-        if (existingPredictionImage) {
-            uploadPhoto.removeChild(existingPredictionImage);
-        }
+        imageClass.src = '';
+        imageClass.alt = '';
 
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
                 // Once the image is loaded, make the prediction
-                predict(img);
+                debouncedPredict(img);
 
                 // Display the uploaded image in the imageBox
                 imageBox.appendChild(img);
