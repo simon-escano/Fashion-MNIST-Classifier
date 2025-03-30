@@ -1,62 +1,110 @@
+const fileInput = document.getElementById('fileInput');
+const uploadPhoto = document.getElementById('uploadPhoto');
+const imageBox = document.getElementById('imageBox');
 let model;
 
+// Load the model when the script runs
+async function initialize() {
+    model = await loadModel();
+}
+initialize();
+
+// Function to load the model (assuming you have this from before)
 async function loadModel() {
-    model = await tf.loadGraphModel('models/model.json');
-    console.log("Model loaded!");
+    try {
+        const loadedModel = await tf.loadGraphModel('models/model.json');
+        console.log('Model loaded successfully');
+        return loadedModel;
+    } catch (error) {
+        console.error('Error loading model:', error);
+        return null;
+    }
 }
 
-$(document).ready(async function () {
-    await loadModel();
+// Function to preprocess the image for the model
+function preprocessImage(imageElement) {
+    // Assuming your model expects images of size 224x224 and normalized pixel values
+    const tensor = tf.browser.fromPixels(imageElement)
+        .resizeNearestNeighbor([224, 224])
+        .toFloat()
+        .div(tf.scalar(255.0))
+        .expandDims(); // Add batch dimension
+    return tensor;
+}
 
-    $('#uploadPhoto').click(function () {
-        $('#fileInput').click();
-    });
+// Function to make predictions with the model
+async function predict(imageElement) {
+    if (!model) {
+        console.error('Model not loaded yet.');
+        return;
+    }
 
-    $('#fileInput').on('change', async function (event) {
-        let file = event.target.files[0];
-        if (file) {
-            let reader = new FileReader();
-            reader.onload = function (e) {
-                $('#imageBox').html(`<img id="uploadedImage" src="${e.target.result}" class="h-full w-full object-contain">`);
-                processImage(file);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+    const tensor = preprocessImage(imageElement);
+    const predictions = await model.predict(tensor).data();
+    console.log('Predictions:', predictions);
+
+    // Process the predictions to get the class with the highest probability
+    const maxPrediction = Math.max(...predictions);
+    const predictedClassIndex = predictions.indexOf(maxPrediction);
+    console.log('Predicted Class Index:', predictedClassIndex);
+
+    // Map the predicted index to your actual class names
+    const classNames = ['ankle-boot', 't-shirt', 'bag', 'coat', 'dress', 'pullover', 'sandal', 'shirt', 'sneaker', 'trouser']; // Replace with your actual class names in the correct order
+
+    if (predictedClassIndex >= 0 && predictedClassIndex < classNames.length) {
+        const predictedClassName = classNames[predictedClassIndex];
+        console.log('Predicted Class:', predictedClassName);
+
+        // Display the prediction image
+        displayPredictionImage(predictedClassName);
+    } else {
+        console.log('Error: Predicted class index out of bounds.');
+    }
+
+    // Dispose of the tensor to free up memory
+    tensor.dispose();
+}
+
+// Function to display the prediction image
+function displayPredictionImage(className) {
+    const predictionImage = document.createElement('img');
+    predictionImage.src = `img/classes/${className}.png`;
+    predictionImage.alt = `Predicted: ${className}`;
+    predictionImage.classList.add('w-20', 'h-20', 'mt-4'); // Add some styling
+
+    // Append the prediction image to the uploadPhoto div
+    uploadPhoto.appendChild(predictionImage);
+}
+
+// Event listener for clicking the upload photo area
+uploadPhoto.addEventListener('click', () => {
+    fileInput.click(); // Trigger the file input
 });
 
-async function processImage(file) {
-    let img = new Image();
-    img.src = URL.createObjectURL(file);
+// Event listener for when a file is selected
+fileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        // Clear any previous uploaded image and prediction
+        imageBox.innerHTML = '';
+        const existingPredictionImage = uploadPhoto.querySelector('img.w-20.h-20.mt-4');
+        if (existingPredictionImage) {
+            uploadPhoto.removeChild(existingPredictionImage);
+        }
 
-    img.onload = async function () {
-        let canvas = document.createElement('canvas');
-        let ctx = canvas.getContext('2d');
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                // Once the image is loaded, make the prediction
+                predict(img);
 
-        // Resize image to match MobileNetV2 input size
-        const modelSize = 224;
-        canvas.width = modelSize;
-        canvas.height = modelSize;
-
-        ctx.drawImage(img, 0, 0, modelSize, modelSize);
-
-        // Convert to TensorFlow tensor
-        let imageData = ctx.getImageData(0, 0, modelSize, modelSize);
-        let tensor = tf.browser.fromPixels(imageData)
-            .toFloat()
-            .div(255.0)
-            .expandDims(0);
-
-        let prediction = await model.predict(tensor).data();
-        console.log("Prediction:", prediction);
-
-        displayPrediction(prediction);
-    };
-}
-
-function displayPrediction(prediction) {
-    let classes = ["T-shirt/top", "Trouser", "Pullover", "Dress", "Coat", "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"];
-    let maxIndex = prediction.indexOf(Math.max(...prediction));
-
-    $('#imageBox').append(`<p class="absolute bottom-5 left-5 text-white bg-black px-2 py-1">${classes[maxIndex]}</p>`);
-}
+                // Display the uploaded image in the imageBox
+                imageBox.appendChild(img);
+                img.classList.add('object-cover', 'h-full', 'w-full');
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
