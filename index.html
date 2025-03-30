@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" class="h-screen">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fashion MNIST Classifier</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js" integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+</head>
+<body class="font-[DM_Sans] bg-[url('img/bg.png')] bg-cover bg-center bg-fixed flex flex-col h-full select-none">
+    <header class="flex px-10 py-5 h-30 items-center">
+        <a class="flex h-full" href="/">
+            <img src="img/logo.png" alt="Logo">
+        </a>
+    </header>
+
+    <main class="flex flex-1 justify-center">
+        <input type="file" id="fileInput" class="hidden" accept="image/*">
+        <div id="uploadPhoto" class="flex h-full relative items-center justify-center cursor-pointer">
+            <img class="z-1" src="img/upload-frame.png">
+            <div id="imageBox" class="h-full w-full absolute inset-0 p-20 m-auto">
+                <div class="flex h-full w-full items-center justify-center gap-4">
+                    <svg class="fill-[#df6592]" height="30" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+                        <path d="M64 0C28.7 0 0 28.7 0 64L0 448c0 35.3 28.7 64 64 64l256 0c35.3 0 64-28.7 64-64l0-288-128 0c-17.7 0-32-14.3-32-32L224 0 64 0zM256 0l0 128 128 0L256 0zM216 408c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-102.1-31 31c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l72-72c9.4-9.4 24.6-9.4 33.9 0l72 72c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-31-31L216 408z"/>
+                    </svg>
+                    <p class="text-2xl font-medium text-[#df6592]">Upload photo</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-[#df6592] text-white flex justify-between px-10 py-5 items-center">
+        <p class="">Presented by</p>
+        <p class="text-xl font-bold">Simon Says</p>
+    </footer>
+
+    <script src="index.js"></script>
+</body>
+</html>
